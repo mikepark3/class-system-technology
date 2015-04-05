@@ -642,9 +642,9 @@ configure:3408: checking for mach/mach_time.h
 configure:3415: result: no
 configure:3436: checking for gethrtime
 configure:3493: gcc -o conftest  -g   conftest.c  >&5
-/tmp/ccyhJwNw.o: In function `main':
-/home/pi/papi-5.4.1/src/conftest.c:65: undefined reference to `gethrtime'
-/tmp/ccyhJwNw.o:(.data+0x0): undefined reference to `gethrtime'
+/tmp/ccjQ4GRc.o: In function `main':
+/home/pi/class-system-software/modules/papi-5.4.1/src/conftest.c:65: undefined reference to `gethrtime'
+/tmp/ccjQ4GRc.o:(.data+0x0): undefined reference to `gethrtime'
 collect2: ld returned 1 exit status
 configure:3499: $? = 1
 configure: failed program was:
@@ -716,9 +716,9 @@ configure: failed program was:
 configure:3524: result: no
 configure:3436: checking for read_real_time
 configure:3493: gcc -o conftest  -g   conftest.c  >&5
-/tmp/ccq56oNk.o: In function `main':
-/home/pi/papi-5.4.1/src/conftest.c:65: undefined reference to `read_real_time'
-/tmp/ccq56oNk.o:(.data+0x0): undefined reference to `read_real_time'
+/tmp/ccWvOm7R.o: In function `main':
+/home/pi/class-system-software/modules/papi-5.4.1/src/conftest.c:65: undefined reference to `read_real_time'
+/tmp/ccWvOm7R.o:(.data+0x0): undefined reference to `read_real_time'
 collect2: ld returned 1 exit status
 configure:3499: $? = 1
 configure: failed program was:
@@ -790,9 +790,9 @@ configure: failed program was:
 configure:3524: result: no
 configure:3436: checking for time_base_to_time
 configure:3493: gcc -o conftest  -g   conftest.c  >&5
-/tmp/ccC4l6DN.o: In function `main':
-/home/pi/papi-5.4.1/src/conftest.c:65: undefined reference to `time_base_to_time'
-/tmp/ccC4l6DN.o:(.data+0x0): undefined reference to `time_base_to_time'
+/tmp/ccCIY8al.o: In function `main':
+/home/pi/class-system-software/modules/papi-5.4.1/src/conftest.c:65: undefined reference to `time_base_to_time'
+/tmp/ccCIY8al.o:(.data+0x0): undefined reference to `time_base_to_time'
 collect2: ld returned 1 exit status
 configure:3499: $? = 1
 configure: failed program was:
@@ -864,9 +864,9 @@ configure: failed program was:
 configure:3524: result: no
 configure:3436: checking for clock_gettime
 configure:3493: gcc -o conftest  -g   conftest.c  >&5
-/tmp/ccCTEaPd.o: In function `main':
-/home/pi/papi-5.4.1/src/conftest.c:65: undefined reference to `clock_gettime'
-/tmp/ccCTEaPd.o:(.data+0x0): undefined reference to `clock_gettime'
+/tmp/cc4j7ysI.o: In function `main':
+/home/pi/class-system-software/modules/papi-5.4.1/src/conftest.c:65: undefined reference to `clock_gettime'
+/tmp/cc4j7ysI.o:(.data+0x0): undefined reference to `clock_gettime'
 collect2: ld returned 1 exit status
 configure:3499: $? = 1
 configure: failed program was:
@@ -938,9 +938,9 @@ configure: failed program was:
 configure:3524: result: no
 configure:3436: checking for mach_absolute_time
 configure:3493: gcc -o conftest  -g   conftest.c  >&5
-/tmp/ccOab0BD.o: In function `main':
-/home/pi/papi-5.4.1/src/conftest.c:65: undefined reference to `mach_absolute_time'
-/tmp/ccOab0BD.o:(.data+0x0): undefined reference to `mach_absolute_time'
+/tmp/ccVm6Drp.o: In function `main':
+/home/pi/class-system-software/modules/papi-5.4.1/src/conftest.c:65: undefined reference to `mach_absolute_time'
+/tmp/ccVm6Drp.o:(.data+0x0): undefined reference to `mach_absolute_time'
 collect2: ld returned 1 exit status
 configure:3499: $? = 1
 configure: failed program was:
@@ -1012,9 +1012,9 @@ configure: failed program was:
 configure:3524: result: no
 configure:3540: checking for dlopen and dlerror symbols in base system
 configure:3558: gcc -o conftest  -g   conftest.c  >&5
-/tmp/ccjuJ3Id.o: In function `main':
-/home/pi/papi-5.4.1/src/conftest.c:26: undefined reference to `dlopen'
-/home/pi/papi-5.4.1/src/conftest.c:26: undefined reference to `dlerror'
+/tmp/ccmcHzWV.o: In function `main':
+/home/pi/class-system-software/modules/papi-5.4.1/src/conftest.c:26: undefined reference to `dlopen'
+/home/pi/class-system-software/modules/papi-5.4.1/src/conftest.c:26: undefined reference to `dlerror'
 collect2: ld returned 1 exit status
 configure:3564: $? = 1
 configure: failed program was:
@@ -1082,8 +1082,8 @@ configure:4406: $? = 0
 configure:4418: result: yes
 configure:4441: checking for working gettid
 configure:4448: gcc -o conftest  -g -DUSE_PTHREAD_MUTEXES   conftest.c  >&5
-/tmp/ccqy2Gkn.o: In function `main':
-/home/pi/papi-5.4.1/src/conftest.c:2: undefined reference to `gettid'
+/tmp/cc0jXXvo.o: In function `main':
+/home/pi/class-system-software/modules/papi-5.4.1/src/conftest.c:2: undefined reference to `gettid'
 collect2: ld returned 1 exit status
 configure:4454: $? = 1
 configure: failed program was:
@@ -1277,6 +1277,7 @@ config.status:729: creating testlib/Makefile.target
 config.status:729: creating ctests/Makefile.target
 config.status:729: creating ftests/Makefile.target
 config.status:832: creating config.h
+config.status:958: config.h is unchanged
 
 ## ---------------- ##
 ## Cache variables. ##
