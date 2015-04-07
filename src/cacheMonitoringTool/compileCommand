@@ -1,0 +1,9 @@
+SQL source
+gcc -o sqlExample embeddedSQL.c `mysql_config --cflags` `mysql_config --libs`
+
+PAPI source
+gcc -I/usr/local/include -O0 papiExample.c /usr/local/lib/libpapi.a -o papiExample
+gcc papiExample.c /usr/local/lib/libpapi.a -o papiExample
+
+compound source
+gcc L1_cache.c /usr/local/lib/libpapi.a -o L1_cache `mysql_config --cflags` `mysql_config --libs`
