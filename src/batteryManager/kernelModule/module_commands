@@ -1,0 +1,26 @@
+# make for kernel module compile
+make
+
+# check kernel msg
+dmesg
+
+# load kernel module command
+sudo insmod example.ko
+
+# check loaded kernel modules
+sudo lsmod
+
+# check kernel msg
+dmesg
+
+# unload kernel module command
+sudo rmmod example.ko
+
+# check loaded kernel modules
+sudo lsmod
+
+# check kernel msg
+dmesg
+
+# kernel msg clear command
+sudo dmesg -C
