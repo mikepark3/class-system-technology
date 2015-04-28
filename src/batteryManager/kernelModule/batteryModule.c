@@ -3,6 +3,7 @@
 #include <linux/timer.h>
 #include <linux/kernel.h>
 #include <linux/fs.h>
+#include <asm/uaccess.h>
 
 #define DELAY_TIME_MSEC(msec) ((msec) * HZ / 10)
 
@@ -10,6 +11,9 @@
 #define CHR_DEV_MAJOR 240 
 
 MODULE_LICENSE("Dual BSD/GPL");
+
+/* Global var */
+int test_level;
 
 /* Timer var, func */
 static struct timer_list timer;
@@ -29,28 +33,17 @@ int chr_open(struct inode *inode, struct file *file)
 	printk("Virtual Character Device Open: Minor Number is %d\n", number);
 	return 0;
 }
-ssize_t chr_read(struct file *file, const char *buf, size_t count, loff_t *f_pos)
+ssize_t chr_read(struct file *file, const int *num, size_t count, loff_t *f_pos)
 {
-	printk("read data: %s\n", buf);
+	copy_to_user(num, &test_level, sizeof(int));
+	printk("device read, user space value : %d\n", *num);
 	return count;
 }
-ssize_t chr_write(struct file *file, const char *buf, size_t count, loff_t *f_pos)
+ssize_t chr_write(struct file *file, const int *num, size_t count, loff_t *f_pos)
 {
-	printk("write data: %s\n", buf); 
+	copy_from_user(&test_level, num, sizeof(int));
+	printk("device write, kernel space value : %d\n", test_level);
 	return count;
-}
-int chr_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
-{
-	switch(cmd)
-	{
-		case 0:
-			printk("cmd value is %d\n", cmd);
-			break;
-		case 4:
-			printk("cmd value is %d\n", cmd);
-			break;
-	}
-	return 0;
 }
 int chr_release(struct inode *inode, struct file *file)
 {
@@ -60,7 +53,6 @@ int chr_release(struct inode *inode, struct file *file)
 struct file_operations chr_fops =
 {
 	owner: THIS_MODULE,
-	unlocked_ioctl: chr_ioctl,
 	write: chr_write,
 	read: chr_read,
 	open: chr_open,
