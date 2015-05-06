@@ -5,25 +5,48 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#define DEVICE_FILE_NAME "/dev/chr_dev"
+#define DEVICE_FILE_NAME "/dev/chr_dev_psu"
+
+static inline void loadBar(int x, int n, int w)
+{
+	float ratio;
+	int i, c;
+
+	// Calculuate the ratio of complete-to-incomplete.
+	ratio = x/(float)n;
+	c     = ratio * w;
+	 
+	// Show the percentage complete.
+	printf("%3d%% [", (int)(ratio*100) );
+
+	// Show the load bar.
+	for (i=0; i<c; i++)
+		printf("=");
+	 
+	for (i=c; i<w; i++)
+		printf(" ");
+	 
+	// ANSI Control codes to go back to the
+	// previous line and clear it.
+	printf("]\r");
+	fflush(stdout);
+}
 
 int main(int argc, char *argv[])
 {
-	int device, cur_level;
-
-	device = open(DEVICE_FILE_NAME, O_RDONLY | O_NDELAY);
-
-	if (device >= 0)
+	int device_fd, cur_level;
+	device_fd = open(DEVICE_FILE_NAME, O_RDONLY | O_NDELAY);
+	
+	if (device_fd >= 0)
 	{
-		printf("Device file open\n");
+		//printf("Device file open\n");
 		while(1)
 		{
-			read(device, &cur_level, sizeof(cur_level));
-			// 여기서 현재 배터리 레벨을 출력하는데, gui로 출력하고, 계속해서 업데이트
-			// ex) 아래 상태바가 한줄에 계속해서 출력되도록 프로그래밍
-			// [============     ] 80%
-			printf("Read value is %d\n", cur_level);
-			sleep(1);
+
+			read(device_fd, &cur_level, sizeof(cur_level));
+			//printf("Read value is %d\n", cur_level);
+			loadBar(cur_level, 100, 100);
+			//sleep(1);
 		}
 	}
 	else

@@ -5,15 +5,15 @@ PWD := $(shell pwd)
 
 .PHONY: all
 all: dev \
-#	app
+	app
 
 .PHONY: dev 
 dev:
 	make -C $(KERNELDIR) M=$(PWD) modules
 
-#.PHONY: app 
-#app:
-#	gcc -o batteryStatus batteryStatus.c
+.PHONY: app 
+app:
+	gcc -o batteryStatus batteryStatus.c
 
 .PHONY: clean 
 clean:
