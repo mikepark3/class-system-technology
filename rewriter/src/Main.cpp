@@ -7,9 +7,10 @@ struct VarInfo
 {
 	string name;
 	string type;
-	string scope;
+	string filePath;
 	unsigned int lineNumber;
 	unsigned int colNumber;
+	bool isExtern = false;
 	bool isSame = false;
 };
 
@@ -30,6 +31,7 @@ enum stateType
 	RENAME
 };
 int processState;
+string path;
 SourceLocation spinAcqLoc = SourceLocation(), spinRelLoc = SourceLocation();
 vector<VarInfo> list1;
 vector<VarInfo> list2;
@@ -66,7 +68,7 @@ public:
 			Stmt *chunk = s;
 			while(PM.hasParent(chunk))	
 			{
-				//	cout<<chunk->getStmtClassName()<<endl;
+				//cout<<chunk->getStmtClassName()<<endl;
 				Stmt *parent = PM.getParent(chunk);
 				if(isa<CompoundStmt>(parent))
 				{
@@ -158,7 +160,7 @@ public:
 	}
 	bool VisitDecl(Decl* dl)
 	{
-		if((isa<VarDecl>(*dl) || isa<ParmVarDecl>(*dl)) && (processState == LISTING1 || processState == LISTING2 || processState == SPIN || processState == EXTERN || processState == RENAME))
+		if((isa<VarDecl>(*dl) || isa<ParmVarDecl>(*dl)) && (processState == SPIN || processState == EXTERN || processState == RENAME))
 		{
 			VarDecl *vd = cast<VarDecl>(dl);
 			SourceLocation loc = dl->getLocEnd();
@@ -171,16 +173,6 @@ public:
 			temp.lineNumber = lineNumber;
 			temp.colNumber = colNumber;
 
-			// Case of listing first file
-			if(processState == LISTING1)
-			{
-				list1.push_back(temp);
-			}
-			// Case of listing second file
-			if(processState == LISTING2)
-			{
-				list2.push_back(temp);
-			}
 			// Case of rewriting
 			if(processState == SPIN || processState == EXTERN || processState == RENAME)
 			{
@@ -224,7 +216,7 @@ class MyASTConsumer : public ASTConsumer
 public:
 	// Constructor
 	MyASTConsumer(Rewriter& R)
-		: Visitor(R), reWriter(R)
+		: Visitor(R), reWriter(R), SM(R.getSourceMgr())
 	{
 	}
 
@@ -234,21 +226,55 @@ public:
 	{
 		for (DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b) 
 		{
-			// Traverse the declaration using our AST visitor.
-			if((*b)->getBody() != NULL)
+			if(SM.isInMainFile((*b)->getLocation()))
 			{
-				ParentMap PM((*b)->getBody());
-				Visitor.myVisitStmt((*b)->getBody(), PM);
-			}
-			Visitor.TraverseDecl(*b);
+				// Traverse the declaration using our AST visitor.
+				if((*b)->getBody() != NULL)
+				{
+					ParentMap PM((*b)->getBody());
+					Visitor.myVisitStmt((*b)->getBody(), PM);
+				}
+				Visitor.TraverseDecl(*b);
 
-			if(spinAcqLoc.isValid())
-			{
-				reWriter.InsertText(spinAcqLoc, "Spin_lock_Acquire();\n", true, true);
-				reWriter.InsertText(spinRelLoc, "\nSpin_lock_Release();\n", true, true);
-				spinAcqLoc = spinRelLoc = SourceLocation();
+				if(spinAcqLoc.isValid())
+				{
+					reWriter.InsertText(spinAcqLoc, "Spin_lock_Acquire();\n", true, true);
+					reWriter.InsertText(spinRelLoc, "\nSpin_lock_Release();\n", true, true);
+					spinAcqLoc = spinRelLoc = SourceLocation();
+				}
+
+				// List up global variables
+				if(isa<VarDecl>(*b))
+				{
+					VarDecl *vd = cast<VarDecl>(*b);
+					SourceLocation loc = (*b)->getLocEnd();
+					unsigned int lineNumber = SM.getExpansionLineNumber(loc);
+					unsigned int colNumber = SM.getExpansionColumnNumber(loc);
+
+					VarInfo temp;
+					temp.name = vd->getNameAsString();
+					temp.type = vd->getType().getAsString();
+					temp.filePath = path;
+					temp.lineNumber = lineNumber;
+					temp.colNumber = colNumber;
+					if(vd->hasExternalStorage())
+					{
+						temp.isExtern = true;
+					}	
+
+					// Case of listing first module
+					if(processState == LISTING1)
+					{
+						list1.push_back(temp);
+					}
+					// Case of listing second module
+					if(processState == LISTING2)
+					{
+						list2.push_back(temp);
+					}
+				}
+				//(*b)->dump();
 			}
-			//(*b)->dump();
 		}
 		return true;
 	}
@@ -256,6 +282,7 @@ public:
 private:
 	MyASTVisitor Visitor;
 	Rewriter& reWriter;
+	SourceManager& SM;
 };
 
 void copyFile(const char *file)
@@ -328,41 +355,67 @@ void parseASTPerFile(const char *file)
 	}
 }
 
-int ftw_list(const char* path, const struct stat*, int type)
+int ftw_list(const char* fileName, const struct stat*, int type)
 {
 	if(type == FTW_F)
 	{
-		parseASTPerFile(path);
+		path = fileName; 
+		if(path.rfind(".c") == path.size()-2 ||  path.rfind(".h") == path.size()-2)
+		{
+			parseASTPerFile(fileName);
+		}
 	}
+	return 0;
 }
 
 int main(int argc, const char **argv) 
 {
+	// Check arguments
 	if(argc != 3)
 	{
 		cout<<"Usage: autoCodeRewriter <dir path1> <dir path2>\n"<<endl;
 		return 1;
 	}
 
+	// List up the global variables of first module
 	processState = LISTING1;
-	cout<<"File '"<<argv[1]<<"' variables list"<<endl;
+	ftw(argv[1], ftw_list, 1);
+	cout<<"Dir "<<argv[1]<<"'s variables list"<<endl;
 	sort(list1.begin(), list1.end(), VarInfoCmp);
 	for(vector<VarInfo>::iterator it=list1.begin(); it != list1.end(); ++it)
 	{
-		cout<<it->name<<" (type : "<<it->type<<")"<<endl;
+		cout<<it->name<<" (filePath : "<<it->filePath;
+		if(it->isExtern)
+		{
+			cout<<", Extern variable)"<<endl;
+		}
+		else
+		{
+			cout<<")"<<endl;
+		}
 	}
 
 	cout<<"=================================================================="<<endl<<endl;
 
+	// List up the global variables of second module
 	processState = LISTING2;
-	parseASTPerFile(argv[2]);
-	cout<<"File '"<<argv[2]<<"' variables list"<<endl;
+	ftw(argv[2], ftw_list, 1);
+	cout<<"Dir "<<argv[2]<<"'s variables list"<<endl;
 	sort(list2.begin(), list2.end(), VarInfoCmp);
 	for(vector<VarInfo>::iterator it=list2.begin(); it != list2.end(); ++it)
 	{
-		cout<<it->name<<" (type : "<<it->type<<")"<<endl;
+		cout<<it->name<<" (filePath : "<<it->filePath;
+		if(it->isExtern)
+		{
+			cout<<", Extern variable)"<<endl;
+		}
+		else
+		{
+			cout<<")"<<endl;
+		}
 	}
 
+	// Process the rewriter job
 	int sameVarNames = 0;
 	for(vector<VarInfo>::iterator it1=list1.begin(); it1 != list1.end(); ++it1)
 	{
@@ -389,15 +442,10 @@ int main(int argc, const char **argv)
 		{
 		case 's':
 		case 'S':
-			/*
-			copyFile(argv[1]);
-			copyFile(argv[2]);
-			cout<<"Backup the original sources automatically."<<endl;
-			*/
 			//process spin_lock
 			processState = SPIN;
-			parseASTPerFile(argv[1]);
-			parseASTPerFile(argv[2]);
+			ftw(argv[1], ftw_list, 1);
+			ftw(argv[2], ftw_list, 1);
 			cout<<"Spin_lock rewriter complete."<<endl;
 			break;
 
@@ -407,24 +455,16 @@ int main(int argc, const char **argv)
 			cin>>input;
 			if(input == '1')
 			{
-				/*
-				copyFile(argv[1]);
-				cout<<"Backup the original source automatically."<<endl;
-				*/
 				//process extern
 				processState = EXTERN;
-				parseASTPerFile(argv[1]);
+				ftw(argv[1], ftw_list, 1);
 				cout<<"Extern rewriter complete."<<endl;
 			}
 			else if(input == '2')
 			{
-				/*
-				copyFile(argv[2]);
-				cout<<"Backup the original source automatically."<<endl;
-				*/
 				//process extern
 				processState = EXTERN;
-				parseASTPerFile(argv[2]);
+				ftw(argv[2], ftw_list, 1);
 				cout<<"Extern rewriter complete."<<endl;
 			}
 			else
@@ -439,36 +479,24 @@ int main(int argc, const char **argv)
 			cin>>input;
 			if(input == '1')
 			{
-				/*
-				copyFile(argv[1]);
-				cout<<"Backup the original source automatically."<<endl;
-				*/
 				//process rename 
 				processState = RENAME;
-				parseASTPerFile(argv[1]);
+				ftw(argv[1], ftw_list, 1);
 				cout<<"Rewriter complete."<<endl;
 			}
 			else if(input == '2')
 			{
-				/*
-				copyFile(argv[2]);
-				cout<<"Backup the original source automatically."<<endl;
-				*/
 				//process rename 
 				processState = RENAME;
-				parseASTPerFile(argv[2]);
+				ftw(argv[2], ftw_list, 1);
 				cout<<"Rewriter complete."<<endl;
 			}
 			else if(input == '3')
 			{
-				/*
-				copyFile(argv[2]);
-				cout<<"Backup the original source automatically."<<endl;
-				*/
 				//process rename 
 				processState = RENAME;
-				parseASTPerFile(argv[1]);
-				parseASTPerFile(argv[2]);
+				ftw(argv[1], ftw_list, 1);
+				ftw(argv[2], ftw_list, 1);
 				cout<<"Rewriter complete."<<endl;
 			}
 			else
